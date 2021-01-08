@@ -15,7 +15,7 @@ impl fmt::Display for InvalidHexCharFoundError {
 impl Error for InvalidHexCharFoundError {}
 
 // Convert hex string to 8-bit binary
-fn hex_to_binary(input: &str) -> Result<String, InvalidHexCharFoundError> {
+fn hex_string_to_binary(input: &str) -> Result<String, InvalidHexCharFoundError> {
     let mut binary = String::new();
     for b in input.chars() {
         let res = match b {
@@ -51,10 +51,10 @@ fn add_base64_char(s: &mut String, slice: &str) {
 
 
 // Convert hex to base64
-fn challenge1(input: &str) -> Result<String, InvalidHexCharFoundError> {
+fn base64_from_string(input: &str) -> Result<String, InvalidHexCharFoundError> {
     let mut result = String::new();
-    let binary_input = hex_to_binary(input)?;
-    // dbg!(&binary_input);
+    let binary_input = hex_string_to_binary(input)?;
+    dbg!(&binary_input);
     let mut chars_in_block = 0;
     for i in (0..binary_input.len()).step_by(6) {
         match binary_input.get(i..i + 6) {
@@ -85,47 +85,50 @@ mod tests {
 
     #[test]
     fn test_hex_to_octal() {
-        let res = hex_to_binary("2");
+        let res = hex_string_to_binary("2");
         assert!(res.is_ok());
         assert_eq!(res.unwrap(), String::from("00110010"));
     }
 
     #[test]
-    fn test_challenge1_4() {
+    fn test_base64_from_string_4() {
         let input = "4";
         let expected_output = "NA==";
-        let res = challenge1(input);
+        let res = base64_from_string(input);
         assert!(res.is_ok());
         assert_eq!(res.unwrap(), expected_output)
     }
 
     #[test]
-    fn test_challenge1_42() {
+    fn test_base64_from_string_42() {
         let input = "42";
         let expected_output = "NDI=";
-        let res = challenge1(input);
+        let res = base64_from_string(input);
         assert!(res.is_ok());
         assert_eq!(res.unwrap(), expected_output)
     }
 
     #[test]
-    fn test_challenge1_423() {
+    fn test_base64_from_string_423() {
         let input = "423";
         let expected_output = "NDIz";
-        let res = challenge1(input);
+        let res = base64_from_string(input);
         assert!(res.is_ok());
         assert_eq!(res.unwrap(), expected_output)
     }
 
+    #[test]
+    fn test_base64_from_string() {
+        let input = "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d";
+        let expected_output = "NDkyNzZkMjA2YjY5NmM2YzY5NmU2NzIwNzk2Zjc1NzIyMDYyNzI2MTY5NmUyMDZjNjk2YjY1MjA2MTIwNzA2ZjY5NzM2ZjZlNmY3NTczMjA2ZDc1NzM2ODcyNmY2ZjZk";
+        let res = base64_from_string(input);
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap(), expected_output)
+    }
 
-    // #[ignore]
     #[test]
     fn test_challenge1() {
         let input = "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d";
-        let expected_output = "NDkyNzZkMjA2YjY5NmM2YzY5NmU2NzIwNzk2Zjc1NzIyMDYyNzI2MTY5NmUyMDZjNjk2YjY1MjA2MTIwNzA2ZjY5NzM2ZjZlNmY3NTczMjA2ZDc1NzM2ODcyNmY2ZjZk";
-        // let expected_output = "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t";
-        let res = challenge1(input);
-        assert!(res.is_ok());
-        assert_eq!(res.unwrap(), expected_output)
+        let expected_output = "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t";
     }
 }
