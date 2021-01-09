@@ -20,7 +20,7 @@ use std::fmt;
 
 #[derive(Debug)]
 pub struct InvalidHexCharFoundError {
-    ch: char,
+    pub ch: char,
 }
 
 impl fmt::Display for InvalidHexCharFoundError {
