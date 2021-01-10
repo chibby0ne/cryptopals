@@ -62,11 +62,10 @@ fn one_char_xor(byte: u8, encoded_hex_str: &str) -> Option<String> {
 }
 
 fn calculate_probability(message: &str) -> f64 {
-    let mut total_probability = 0.0;
-    for ch in message.to_lowercase().chars() {
-        total_probability += LETTER_FREQUENCY.get(&ch).unwrap_or(&0.0);
-    }
-    total_probability
+    message
+        .to_lowercase()
+        .chars()
+        .fold(0.0, |acc, x| acc + LETTER_FREQUENCY.get(&x).unwrap_or(&0.0))
 }
 
 #[derive(Debug, Clone)]
