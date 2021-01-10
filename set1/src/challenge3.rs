@@ -54,8 +54,8 @@ fn one_char_xor(byte: u8, encoded_hex_str: &str) -> Option<String> {
     let mut end_string = String::new();
     for i in (0..encoded_hex_str.len()).step_by(2) {
         if let Some(slice) = encoded_hex_str.get(i..i + 2) {
-            let ch = char::from_u32(u32::from_str_radix(slice, 16).ok()?)? as u8 ^ byte;
-            end_string.push(ch as char);
+            let ch = u32::from_str_radix(slice, 16).ok()? ^ byte as u32;
+            end_string.push(char::from_u32(ch)?);
         }
     }
     Some(end_string)
@@ -63,28 +63,24 @@ fn one_char_xor(byte: u8, encoded_hex_str: &str) -> Option<String> {
 
 fn calculate_probability(message: &str) -> f64 {
     let mut total_probability = 0.0;
-    for i in (0..message.len()).step_by(2) {
-        if let Some(slice) = message.get(i..i + 2) {
-            let val = u32::from_str_radix(slice, 16).unwrap_or(b' ' as u32);
-            let ch = char::from_u32(val).unwrap_or(' ');
-            total_probability += LETTER_FREQUENCY.get(&ch).unwrap_or(&0.0);
-        }
+    for ch in message.to_lowercase().chars() {
+        total_probability += LETTER_FREQUENCY.get(&ch).unwrap_or(&0.0);
     }
     total_probability
 }
 
+#[derive(Debug, Clone)]
 struct MessageBundle {
     message: String,
     key: u8,
     probability: f64,
 }
 
-fn challenge3() -> String {
+fn challenge3() -> MessageBundle {
     let mut possible_messages: Vec<MessageBundle> = vec![];
     for byte in 0..=255 {
         if let Some(message) = one_char_xor(byte, HEX_ENCODED_STRING) {
             let probability = calculate_probability(&message);
-            dbg!(probability);
             possible_messages.push(MessageBundle {
                 message,
                 probability,
@@ -93,11 +89,7 @@ fn challenge3() -> String {
         }
     }
     possible_messages.sort_by(|a, b| a.probability.partial_cmp(&b.probability).unwrap());
-    possible_messages.reverse();
-    format!(
-        "Message: {}\n, key: {}",
-        possible_messages[0].message, possible_messages[0].key
-    )
+    possible_messages.iter().last().unwrap().clone()
 }
 
 #[cfg(test)]
@@ -106,6 +98,11 @@ mod tests {
 
     #[test]
     fn test_challenge3() {
-        assert_eq!(challenge3(), String::from(""));
+        let res = challenge3();
+        assert_eq!(res.key, 88);
+        assert_eq!(
+            res.message,
+            String::from("Cooking MC's like a pound of bacon")
+        );
     }
 }
