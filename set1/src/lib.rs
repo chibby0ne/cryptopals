@@ -6,3 +6,5 @@ mod challenge1;
 mod challenge2;
 #[allow(dead_code)]
 mod challenge3;
+#[allow(dead_code)]
+mod challenge4;

@@ -68,27 +68,39 @@ fn calculate_probability(message: &str) -> f64 {
         .fold(0.0, |acc, x| acc + LETTER_FREQUENCY.get(&x).unwrap_or(&0.0))
 }
 
-#[derive(Debug, Clone)]
-struct MessageBundle {
-    message: String,
-    key: u8,
-    probability: f64,
+fn decode_single_message_with_probability(byte: u8, s: &str) -> Option<MessageBundle> {
+    if let Some(message) = one_char_xor(byte, s) {
+        let probability = calculate_probability(&message);
+        Some(MessageBundle {
+            message,
+            probability,
+            key: byte,
+        })
+    } else {
+        None
+    }
 }
 
-fn challenge3() -> MessageBundle {
+pub fn find_message_and_key(s: &str) -> MessageBundle {
     let mut possible_messages: Vec<MessageBundle> = vec![];
     for byte in 0..=255 {
-        if let Some(message) = one_char_xor(byte, HEX_ENCODED_STRING) {
-            let probability = calculate_probability(&message);
-            possible_messages.push(MessageBundle {
-                message,
-                probability,
-                key: byte,
-            });
+        if let Some(message_bundle) = decode_single_message_with_probability(byte, s) {
+            possible_messages.push(message_bundle);
         }
     }
     possible_messages.sort_by(|a, b| a.probability.partial_cmp(&b.probability).unwrap());
     possible_messages.iter().last().unwrap().clone()
+}
+
+#[derive(Debug, Clone)]
+pub struct MessageBundle {
+    pub message: String,
+    key: u8,
+    pub probability: f64,
+}
+
+fn challenge3() -> MessageBundle {
+    find_message_and_key(HEX_ENCODED_STRING)
 }
 
 #[cfg(test)]
