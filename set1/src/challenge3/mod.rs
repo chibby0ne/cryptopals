@@ -95,7 +95,7 @@ pub fn find_message_and_key(s: &str) -> MessageBundle {
 #[derive(Debug, Clone)]
 pub struct MessageBundle {
     pub message: String,
-    key: u8,
+    pub key: u8,
     pub probability: f64,
 }
 
