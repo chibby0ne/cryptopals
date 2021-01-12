@@ -8,3 +8,5 @@ mod challenge2;
 mod challenge3;
 #[allow(dead_code)]
 mod challenge4;
+#[allow(dead_code)]
+mod challenge5;
