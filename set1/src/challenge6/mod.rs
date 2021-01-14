@@ -55,8 +55,11 @@ aren't any blatant errors in this text. In particular: the "wokka wokka!!!" edit
 */
 
 use super::challenge1::InvalidHexCharFoundError;
-use super::challenge5::repeating_xor;
 use super::challenge4::read_lines;
+use super::challenge5::repeating_xor;
+use std::fs::File;
+use std::io::{self, BufRead};
+use std::path::Path;
 
 fn base64_char_to_binary(input: &str) -> Result<String, InvalidHexCharFoundError> {
     let mut binary = String::new();
@@ -110,14 +113,46 @@ fn base64_decode(input: &str) -> Result<String, InvalidHexCharFoundError> {
     Ok(result)
 }
 
+#[derive(Debug)]
+struct KeysizeAverageDistance {
+    keysize: usize,
+    avg_distance: f64,
+}
+
+fn read_file<P: AsRef<Path>>(filename: P) -> io::Result<io::BufReader<File>> {
+    let file = File::open(filename)?;
+    Ok(io::BufReader::new(file))
+}
+
 fn find_keysize(s: &str) -> usize {
-    let mut distances = vec![];
+    let mut avg_distances: Vec<KeysizeAverageDistance> = vec![];
     for keysize in 2..=40 {
-        if let Ok(lines) = read_lines("src/challenge6/6.txt") {
-            for line in lines {
+        let mut distances: Vec<f64> = Vec::new();
+        if let Ok(mut reader) = read_file(s) {
+            let mut all_lines: Vec<u8> = Vec::new();
+            if let Ok(_) = reader.read_until(b'\0', &mut all_lines) {
+                let all_lines_res = String::from_utf8(all_lines);
+                if let Ok(all_lines_str) = all_lines_res {
+                    for i in (0..all_lines_str.len()).step_by(keysize * 2) {
+                        if let Some(s) = all_lines_str.get(i..i + keysize) {
+                            if let Some(t) = all_lines_str.get(i + keysize..i + keysize * 2) {
+                                distances.push(hamming_distance(s, t) as f64 / keysize as f64);
+                            }
+                        }
+                    }
+                }
             }
+            let sum_distances = distances.iter().sum::<f64>();
+            let avg_distance = sum_distances / distances.len() as f64;
+            avg_distances.push(KeysizeAverageDistance {
+                keysize,
+                avg_distance,
+            });
         }
     }
+    dbg!(&avg_distances);
+    avg_distances.sort_by(|a, b| a.avg_distance.partial_cmp(&b.avg_distance).unwrap());
+    avg_distances.iter().nth(0).unwrap().keysize
 }
 
 #[cfg(test)]
@@ -139,5 +174,11 @@ mod tests {
         let t = "wokka wokka!!!";
         let expected_output: usize = 37;
         assert_eq!(hamming_distance(s, t), expected_output);
+    }
+
+    #[test]
+    fn test_find_keysize() {
+        let input = "src/challenge6/6.txt";
+        assert_eq!(find_keysize(input), 20);
     }
 }
