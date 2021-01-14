@@ -23,11 +23,10 @@ fn challenge4(filename: &str) -> String {
         }
     }
     possible_lines.sort_by(|a, b| a.probability.partial_cmp(&b.probability).unwrap());
-    dbg!(possible_lines.iter().last().unwrap().key);
-    dbg!(possible_lines.iter().last().unwrap().message.clone())
+    possible_lines.iter().last().unwrap().message.clone()
 }
 
-fn read_lines<P: AsRef<Path>>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>> {
+pub fn read_lines<P: AsRef<Path>>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>> {
     let file = File::open(filename)?;
     Ok(io::BufReader::new(file).lines())
 }

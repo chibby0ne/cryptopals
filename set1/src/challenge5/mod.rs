@@ -19,7 +19,7 @@ Encrypt a bunch of stuff using your repeating-key XOR function. Encrypt your mai
 password file. Your .sig file. Get a feel for it. I promise, we aren't wasting your time with this.
 */
 
-fn repeating_xor(text: &str, key: &str) -> String {
+pub fn repeating_xor(text: &str, key: &str) -> String {
     let mut result = String::new();
     let mut key_iter = key.bytes().cycle();
     for text_byte in text.bytes() {

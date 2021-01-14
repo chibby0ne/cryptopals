@@ -14,27 +14,35 @@ Decrypt it.
 
 Here's how:
 
-    Let KEYSIZE be the guessed length of the key; try values from 2 to (say) 40.  Write a function
-    to compute the edit distance/Hamming distance between two strings. The Hamming distance is just
-    the number of differing bits. The distance between:
+    1. Let KEYSIZE be the guessed length of the key; try values from 2 to (say) 40.
 
-    this is a test
+    2. Write a function to compute the edit distance/Hamming distance between two strings. The
+       Hamming distance is just the number of differing bits. The distance between:
 
-    and
+       this is a test
 
-    wokka wokka!!!
+       and
 
-    is 37. Make sure your code agrees before you proceed.  For each KEYSIZE, take the first KEYSIZE
-    worth of bytes, and the second KEYSIZE worth of bytes, and find the edit distance between them.
-    Normalize this result by dividing by KEYSIZE.  The KEYSIZE with the smallest normalized edit
-    distance is probably the key. You could proceed perhaps with the smallest 2-3 KEYSIZE values.
-    Or take 4 KEYSIZE blocks instead of 2 and average the distances.  Now that you probably know
-    the KEYSIZE: break the ciphertext into blocks of KEYSIZE length.  Now transpose the blocks:
-    make a block that is the first byte of every block, and a block that is the second byte of
-    every block, and so on.  Solve each block as if it was single-character XOR. You already have
-    code to do this.  For each block, the single-byte XOR key that produces the best looking
-    histogram is the repeating-key XOR key byte for that block. Put them together and you have the
-    key.
+       wokka wokka!!!
+
+       is 37. Make sure your code agrees before you proceed.
+
+    3. For each KEYSIZE, take the first KEYSIZE worth of bytes, and the second KEYSIZE worth of
+       bytes, and find the edit distance between them. Normalize this result by dividing by
+       KEYSIZE.
+
+    4. The KEYSIZE with the smallest normalized edit distance is probably the key. You could
+       proceed perhaps with the smallest 2-3 KEYSIZE values. Or take 4 KEYSIZE blocks instead of 2
+       and average the distances.
+
+    5. Now that you probably know the KEYSIZE: break the ciphertext into blocks of KEYSIZE length.
+
+    6. Now transpose the blocks: make a block that is the first byte of every block, and a block
+       that is the second byte of every block, and so on.
+
+    7. Solve each block as if it was single-character XOR. You already have code to do this.  For
+       each block, the single-byte XOR key that produces the best looking histogram is the
+       repeating-key XOR key byte for that block. Put them together and you have the key.
 
 This code is going to turn out to be surprisingly useful later on. Breaking repeating-key XOR
 ("Vigenere") statistically is obviously an academic exercise, a "Crypto 101" thing. But more people
@@ -47,6 +55,8 @@ aren't any blatant errors in this text. In particular: the "wokka wokka!!!" edit
 */
 
 use super::challenge1::InvalidHexCharFoundError;
+use super::challenge5::repeating_xor;
+use super::challenge4::read_lines;
 
 fn base64_char_to_binary(input: &str) -> Result<String, InvalidHexCharFoundError> {
     let mut binary = String::new();
@@ -80,6 +90,15 @@ fn add_char(s: &mut String, slice: &str) {
     }
 }
 
+fn hamming_distance(s: &str, t: &str) -> usize {
+    s.bytes().zip(t.bytes()).fold(0, |acc, pair| {
+        acc + format!("{:b}", pair.0 ^ pair.1)
+            .chars()
+            .filter(|&c| c == '1')
+            .count()
+    })
+}
+
 fn base64_decode(input: &str) -> Result<String, InvalidHexCharFoundError> {
     let mut result = String::new();
     let binary_input = base64_char_to_binary(input)?;
@@ -89,6 +108,16 @@ fn base64_decode(input: &str) -> Result<String, InvalidHexCharFoundError> {
         }
     }
     Ok(result)
+}
+
+fn find_keysize(s: &str) -> usize {
+    let mut distances = vec![];
+    for keysize in 2..=40 {
+        if let Ok(lines) = read_lines("src/challenge6/6.txt") {
+            for line in lines {
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -102,5 +131,13 @@ mod tests {
         let res = base64_decode(input);
         assert!(res.is_ok());
         assert_eq!(res.unwrap(), expected_output)
+    }
+
+    #[test]
+    fn test_hamming_distance() {
+        let s = "this is a test";
+        let t = "wokka wokka!!!";
+        let expected_output: usize = 37;
+        assert_eq!(hamming_distance(s, t), expected_output);
     }
 }
