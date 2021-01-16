@@ -124,10 +124,10 @@ fn read_file<P: AsRef<Path>>(filename: P) -> io::Result<io::BufReader<File>> {
     Ok(io::BufReader::new(file))
 }
 
-fn find_keysize(s: &str) -> usize {
+fn find_keysize(file: &str) -> usize {
     let mut avg_distances: Vec<KeysizeAverageDistance> = vec![];
     let mut all_lines: Vec<u8> = Vec::new();
-    if let Ok(mut reader) = read_file(s) {
+    if let Ok(mut reader) = read_file(file) {
         if reader.read_until(b'\0', &mut all_lines).is_ok() {
             let all_lines_res = String::from_utf8(all_lines);
             if let Ok(all_lines_str) = all_lines_res {
@@ -152,6 +152,24 @@ fn find_keysize(s: &str) -> usize {
     }
     avg_distances.sort_by(|a, b| a.avg_distance.partial_cmp(&b.avg_distance).unwrap());
     avg_distances.get(0).unwrap().keysize
+}
+
+fn break_in_keysize_blocks(keysize: usize, file: &str) -> Vec<String> {
+    let mut res: Vec<String> = Vec::new();
+    let mut all_lines: Vec<u8> = Vec::new();
+    if let Ok(mut reader) = read_file(file) {
+        if reader.read_until(b'\0', &mut all_lines).is_ok() {
+            let all_lines_res = String::from_utf8(all_lines);
+            if let Ok(all_lines_str) = all_lines_res {
+                for i in (0..all_lines_str.len()).step_by(keysize) {
+                    if let Some(slice) = all_lines_str.get(i..i + keysize) {
+                        res.push(slice.to_string());
+                    }
+                }
+            }
+        }
+    }
+    res
 }
 
 #[cfg(test)]
@@ -179,5 +197,14 @@ mod tests {
     fn test_find_keysize() {
         let input = "src/challenge6/6.txt";
         assert_eq!(find_keysize(input), 20);
+    }
+
+    #[test]
+    fn test_break_in_keysize_blocks() {
+        let keysize = 20;
+        let file = "src/challenge6/6.txt";
+        assert!(break_in_keysize_blocks(keysize, file)
+            .iter()
+            .all(|x| x.len() == 20));
     }
 }
