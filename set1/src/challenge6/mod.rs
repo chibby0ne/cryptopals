@@ -172,6 +172,26 @@ fn break_in_keysize_blocks(keysize: usize, file: &str) -> Vec<String> {
     res
 }
 
+fn transpose_bytes_of_blocks(blocks: Vec<String>) -> Vec<String> {
+    let mut res: Vec<String> = Vec::new();
+    if let Some(first) = blocks.get(0) {
+        for n in 0..first.len() {
+            for i in 0..blocks.len() {
+                if let Some(slice) = blocks.get(i).unwrap().get(n..n + 1) {
+                    match res.get_mut(n) {
+                        Some(s) => s.push_str(slice),
+                        None => {
+                            res.insert(n, String::new());
+                            res.get_mut(n).unwrap().push_str(slice);
+                        }
+                    };
+                }
+            }
+        }
+    }
+    res
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -206,5 +226,21 @@ mod tests {
         assert!(break_in_keysize_blocks(keysize, file)
             .iter()
             .all(|x| x.len() == 20));
+    }
+
+    #[test]
+    fn test_transpose_bytes_of_blocks() {
+        let input = vec![format!("hello"), format!("cruel"), format!("world")];
+        let output = transpose_bytes_of_blocks(input);
+        assert_eq!(
+            output,
+            vec![
+                format!("hcw"),
+                format!("ero"),
+                format!("lur"),
+                format!("lel"),
+                format!("old")
+            ]
+        );
     }
 }
