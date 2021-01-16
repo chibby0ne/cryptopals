@@ -70,15 +70,16 @@ fn calculate_probability(message: &str) -> f64 {
 }
 
 fn decode_single_message_with_probability(byte: u8, s: &str) -> Option<MessageBundle> {
-    if let Some(message) = one_char_xor(byte, s) {
-        let probability = calculate_probability(&message);
-        Some(MessageBundle {
-            message,
-            probability,
-            key: byte,
-        })
-    } else {
-        None
+    match one_char_xor(byte, s) {
+        Some(message) => {
+            let probability = calculate_probability(&message);
+            Some(MessageBundle {
+                message,
+                probability,
+                key: byte,
+            })
+        }
+        None => None,
     }
 }
 
