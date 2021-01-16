@@ -56,10 +56,6 @@ aren't any blatant errors in this text. In particular: the "wokka wokka!!!" edit
 
 use super::challenge1::InvalidHexCharFoundError;
 use super::challenge4::read_lines;
-use super::challenge5::repeating_xor;
-use std::fs::File;
-use std::io::{self, BufRead};
-use std::path::Path;
 
 fn base64_char_to_binary(input: &str) -> Result<String, InvalidHexCharFoundError> {
     let mut binary = String::new();
@@ -119,54 +115,48 @@ struct KeysizeAverageDistance {
     avg_distance: f64,
 }
 
-fn read_file<P: AsRef<Path>>(filename: P) -> io::Result<io::BufReader<File>> {
-    let file = File::open(filename)?;
-    Ok(io::BufReader::new(file))
-}
-
-fn find_keysize(file: &str) -> usize {
-    let mut avg_distances: Vec<KeysizeAverageDistance> = vec![];
-    let mut all_lines: Vec<u8> = Vec::new();
-    if let Ok(mut reader) = read_file(file) {
-        if reader.read_until(b'\0', &mut all_lines).is_ok() {
-            let all_lines_res = String::from_utf8(all_lines);
-            if let Ok(all_lines_str) = all_lines_res {
-                for keysize in 2..=40 {
-                    let mut distances: Vec<f64> = Vec::new();
-                    for i in (0..all_lines_str.len()).step_by(keysize * 2) {
-                        if let Some(s) = all_lines_str.get(i..i + keysize) {
-                            if let Some(t) = all_lines_str.get(i + keysize..i + keysize * 2) {
-                                distances.push(hamming_distance(s, t) as f64 / keysize as f64);
-                            }
-                        }
-                    }
-                    let sum_distances = distances.iter().sum::<f64>();
-                    let avg_distance = sum_distances / distances.len() as f64;
-                    avg_distances.push(KeysizeAverageDistance {
-                        keysize,
-                        avg_distance,
-                    });
-                }
+fn read_lines_into_one_string(filename: &str) -> String {
+    let mut all_lines = String::new();
+    if let Ok(lines) = read_lines(filename) {
+        for line in lines {
+            if let Ok(lin) = line {
+                all_lines.push_str(&lin);
             }
         }
     }
+    all_lines
+}
+
+fn find_keysize(filename: &str) -> usize {
+    let mut avg_distances: Vec<KeysizeAverageDistance> = vec![];
+    let all_lines = read_lines_into_one_string(filename);
+    for keysize in 2..=40 {
+        let mut distances: Vec<f64> = Vec::new();
+        for i in (0..all_lines.len()).step_by(keysize * 2) {
+            if let Some(s) = all_lines.get(i..i + keysize) {
+                if let Some(t) = all_lines.get(i + keysize..i + keysize * 2) {
+                    distances.push(hamming_distance(s, t) as f64 / keysize as f64);
+                }
+            }
+        }
+        let sum_distances = distances.iter().sum::<f64>();
+        let avg_distance = sum_distances / distances.len() as f64;
+        avg_distances.push(KeysizeAverageDistance {
+            keysize,
+            avg_distance,
+        });
+    }
+    dbg!(&avg_distances);
     avg_distances.sort_by(|a, b| a.avg_distance.partial_cmp(&b.avg_distance).unwrap());
     avg_distances.get(0).unwrap().keysize
 }
 
-fn break_in_keysize_blocks(keysize: usize, file: &str) -> Vec<String> {
+fn break_in_keysize_blocks(keysize: usize, filename: &str) -> Vec<String> {
     let mut res: Vec<String> = Vec::new();
-    let mut all_lines: Vec<u8> = Vec::new();
-    if let Ok(mut reader) = read_file(file) {
-        if reader.read_until(b'\0', &mut all_lines).is_ok() {
-            let all_lines_res = String::from_utf8(all_lines);
-            if let Ok(all_lines_str) = all_lines_res {
-                for i in (0..all_lines_str.len()).step_by(keysize) {
-                    if let Some(slice) = all_lines_str.get(i..i + keysize) {
-                        res.push(slice.to_string());
-                    }
-                }
-            }
+    let all_lines = read_lines_into_one_string(filename);
+    for i in (0..all_lines.len()).step_by(keysize) {
+        if let Some(slice) = all_lines.get(i..i + keysize) {
+            res.push(slice.to_string());
         }
     }
     res
