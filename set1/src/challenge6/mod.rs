@@ -55,8 +55,7 @@ aren't any blatant errors in this text. In particular: the "wokka wokka!!!" edit
 */
 
 use super::challenge1::InvalidHexCharFoundError;
-use super::challenge4::read_lines;
-use super::challenge5::repeating_xor;
+use super::challenge3::find_message_and_key;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
@@ -124,34 +123,39 @@ fn read_file<P: AsRef<Path>>(filename: P) -> io::Result<io::BufReader<File>> {
     Ok(io::BufReader::new(file))
 }
 
-fn find_keysize(file: &str) -> usize {
+fn find_keysize(file: &str) -> Result<usize, InvalidHexCharFoundError> {
     let mut avg_distances: Vec<KeysizeAverageDistance> = vec![];
     let mut all_lines: Vec<u8> = Vec::new();
     if let Ok(mut reader) = read_file(file) {
         if reader.read_until(b'\0', &mut all_lines).is_ok() {
             let all_lines_res = String::from_utf8(all_lines);
             if let Ok(all_lines_str) = all_lines_res {
-                for keysize in 2..=40 {
-                    let mut distances: Vec<f64> = Vec::new();
-                    for i in (0..all_lines_str.len()).step_by(keysize * 2) {
-                        if let Some(s) = all_lines_str.get(i..i + keysize) {
-                            if let Some(t) = all_lines_str.get(i + keysize..i + keysize * 2) {
-                                distances.push(hamming_distance(s, t) as f64 / keysize as f64);
+                dbg!(&all_lines_str);
+                let all_lines_base64_decoded = base64_decode(&all_lines_str)?;
+                    dbg!("what");
+                    dbg!(&all_lines_base64_decoded);
+                    for keysize in 2..=40 {
+                        let mut distances: Vec<f64> = Vec::new();
+                        for i in (0..all_lines_str.len()).step_by(keysize * 2) {
+                            if let Some(s) = all_lines_base64_decoded.get(i..i + keysize) {
+                                if let Some(t) = all_lines_base64_decoded.get(i + keysize..i + keysize * 2) {
+                                    distances.push(hamming_distance(s, t) as f64 / keysize as f64);
+                                }
                             }
                         }
+                        let sum_distances = distances.iter().sum::<f64>();
+                        let avg_distance = sum_distances / distances.len() as f64;
+                        avg_distances.push(KeysizeAverageDistance {
+                            keysize,
+                            avg_distance,
+                        });
                     }
-                    let sum_distances = distances.iter().sum::<f64>();
-                    let avg_distance = sum_distances / distances.len() as f64;
-                    avg_distances.push(KeysizeAverageDistance {
-                        keysize,
-                        avg_distance,
-                    });
-                }
             }
         }
     }
+    dbg!(&avg_distances);
     avg_distances.sort_by(|a, b| a.avg_distance.partial_cmp(&b.avg_distance).unwrap());
-    avg_distances.get(0).unwrap().keysize
+    Ok(avg_distances.get(0).unwrap().keysize)
 }
 
 fn break_in_keysize_blocks(keysize: usize, file: &str) -> Vec<String> {
@@ -192,6 +196,18 @@ fn transpose_bytes_of_blocks(blocks: Vec<String>) -> Vec<String> {
     res
 }
 
+fn break_the_ciphertext(file: &str) -> Result<String, InvalidHexCharFoundError> {
+    let mut key = String::new();
+    let keysize = find_keysize(file)?;
+    let blocks = break_in_keysize_blocks(keysize, file);
+    let transposed_blocks = transpose_bytes_of_blocks(blocks);
+    for block in transposed_blocks {
+        let message = find_message_and_key(&block);
+        key.push(message.key as char);
+    }
+    Ok(format!("key is: {}", key))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -216,7 +232,9 @@ mod tests {
     #[test]
     fn test_find_keysize() {
         let input = "src/challenge6/6.txt";
-        assert_eq!(find_keysize(input), 20);
+        let output = find_keysize(input);
+        assert!(output.is_ok());
+        assert_eq!(output.unwrap(), 40);
     }
 
     #[test]
@@ -224,8 +242,8 @@ mod tests {
         let keysize = 20;
         let file = "src/challenge6/6.txt";
         assert!(break_in_keysize_blocks(keysize, file)
-            .iter()
-            .all(|x| x.len() == 20));
+                .iter()
+                .all(|x| x.len() == 20));
     }
 
     #[test]
@@ -235,12 +253,20 @@ mod tests {
         assert_eq!(
             output,
             vec![
-                format!("hcw"),
-                format!("ero"),
-                format!("lur"),
-                format!("lel"),
-                format!("old")
+            format!("hcw"),
+            format!("ero"),
+            format!("lur"),
+            format!("lel"),
+            format!("old")
             ]
-        );
+            );
+    }
+
+    #[test]
+    fn test_break_the_ciphertext() {
+        let input = "src/challenge6/6.txt";
+        let output = break_the_ciphertext(input);
+        assert!(output.is_ok());
+        assert_eq!(output.unwrap(), "asdf");
     }
 }

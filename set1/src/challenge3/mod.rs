@@ -55,11 +55,12 @@ fn one_char_xor(byte: u8, encoded_hex_str: &str) -> Option<String> {
     let mut end_string = String::new();
     for i in (0..encoded_hex_str.len()).step_by(2) {
         if let Some(slice) = encoded_hex_str.get(i..i + 2) {
+            dbg!(slice);
             let ch = u32::from_str_radix(slice, 16).ok()? ^ byte as u32;
             end_string.push(char::from_u32(ch)?);
         }
     }
-    Some(end_string)
+    dbg!(Some(end_string))
 }
 
 fn calculate_probability(message: &str) -> f64 {
@@ -84,9 +85,12 @@ fn decode_single_message_with_probability(byte: u8, s: &str) -> Option<MessageBu
 }
 
 pub fn find_message_and_key(s: &str) -> MessageBundle {
+    dbg!(s);
     let mut possible_messages: Vec<MessageBundle> = vec![];
     for byte in 0..=255 {
+        dbg!(byte);
         if let Some(message_bundle) = decode_single_message_with_probability(byte, s) {
+            dbg!(&message_bundle);
             possible_messages.push(message_bundle);
         }
     }
